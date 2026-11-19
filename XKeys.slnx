@@ -1,0 +1,19 @@
+<!--
+  GameshowPro.XKeys is one library with two builds, chosen by the configuration: Debug/Release give the plain .NET build (package
+  GameshowPro.XKeys), DebugWindows/ReleaseWindows the WPF build (package GameshowPro.XKeys.Windows). The tests follow the same
+  configuration. Build and test each separately (dotnet test XKeys.slnx -c Release, then -c ReleaseWindows), not at once.
+-->
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Release" />
+    <BuildType Name="DebugWindows" />
+    <BuildType Name="ReleaseWindows" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/GameshowPro.XKeys/GameshowPro.XKeys.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameshowPro.XKeys.Tests/GameshowPro.XKeys.Tests.csproj" />
+  </Folder>
+</Solution>

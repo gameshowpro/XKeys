@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs against whichever build of the library the configuration selects, as the library does: Debug/Release test the plain .NET build
+    (net11.0, GameshowPro.XKeys), DebugWindows/ReleaseWindows the WPF build (net11.0-windows, GameshowPro.XKeys.Windows):
+      dotnet test XKeys.slnx -c Release
+      dotnet test XKeys.slnx -c ReleaseWindows
+    The same tests run in both; WPF defines the constant WPF, as the library does, for the few that check what only that build has.
+  -->
+  <PropertyGroup>
+    <Configurations>Debug;Release;DebugWindows;ReleaseWindows</Configurations>
+    <XKeysWindowsBuild>false</XKeysWindowsBuild>
+    <XKeysWindowsBuild Condition="'$(Configuration)' == 'DebugWindows' OR '$(Configuration)' == 'ReleaseWindows'">true</XKeysWindowsBuild>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="$(XKeysWindowsBuild)">
+      <PropertyGroup>
+        <TargetFramework>net11.0-windows</TargetFramework>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <DefineConstants>$(DefineConstants);WPF</DefineConstants>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The binding tests call xkhid.dll's structures through pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- xkhid.dll is x64 only. -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'DebugWindows'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseWindows'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.4.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The library, built in this project's configuration; it builds xkhid.dll through its own targets and flows it to this project's output. -->
+    <ProjectReference Include="..\..\src\GameshowPro.XKeys\GameshowPro.XKeys.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+</Project>

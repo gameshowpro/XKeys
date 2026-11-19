@@ -1,0 +1,188 @@
+on:
+  push:
+    branches:
+      - main
+    # A push that changes only documentation or editor and agent files does not build or publish packages. A push that also
+    # changes anything else still does. The root README.md is packed into both packages, so a change to it does build.
+    # Later patterns override earlier ones.
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - 'README.md'
+      - '!.claude/**'
+      - '!.vscode/**'
+      - '!.gitignore'
+      - '!LICENSE*'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+  # One library, two builds (the GameshowPro.Common convention): Release makes GameshowPro.XKeys (plain .NET), ReleaseWindows makes
+  # GameshowPro.XKeys.Windows (the same code plus the WPF resource dictionary). Each is built, tested and packed on its own.
+  Build_And_Package:
+    name: Build and package
+    # Windows: xkhid.dll, which both packages carry, is built with the Rust MSVC toolchain, and the Windows build uses WPF.
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        package:
+          - name: Cross-platform
+            configuration: Release
+          - name: Windows
+            configuration: ReleaseWindows
+
+    outputs:
+      semver2_version: ${{ env.NBGV_SemVer2 }}
+      nuget_version: ${{ env.NBGV_NuGetPackageVersion }}
+
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: true
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      SLN_PATH: ./XKeys.slnx
+      PROJECT_PATH: ./src/GameshowPro.XKeys/GameshowPro.XKeys.csproj
+      PUBLISH_PATH: ./publish
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0 # avoid shallow clone so nbgv can do its work.
+
+    - name: Use .NET SDK from global.json
+      uses: actions/setup-dotnet@v6
+      with:
+        # global.json pins the .NET 11 SDK.
+        global-json-file: global.json
+
+    # xkhid.dll is built from the Rust crate by the library's build (cargo, stable, x86_64-pc-windows-msvc). The hosted Windows
+    # runner normally has Rust; install it only if it does not.
+    - name: Ensure Rust
+      shell: pwsh
+      run: |
+        $cargoBin = Join-Path (Join-Path $env:USERPROFILE '.cargo') 'bin'
+        if (-not (Get-Command cargo -ErrorAction SilentlyContinue) -and -not (Test-Path (Join-Path $cargoBin 'cargo.exe'))) {
+            Invoke-WebRequest -Uri https://win.rustup.rs/x86_64 -OutFile rustup-init.exe
+            ./rustup-init.exe -y --default-toolchain stable --profile minimal --target x86_64-pc-windows-msvc
+            if ($LASTEXITCODE -ne 0) { throw "rustup-init failed with exit code $LASTEXITCODE" }
+        }
+        $cargoBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        $env:PATH = "$cargoBin;$env:PATH"
+        rustup target add x86_64-pc-windows-msvc
+        cargo --version
+
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.5.2
+      with:
+        setAllVars: true
+
+    - name: Add nuget source
+      shell: pwsh
+      run: dotnet nuget add source --username ${{ vars.GSP_PACKAGE_USERNAME }} --password ${{ secrets.GSP_PACKAGE_PAT }} --store-password-in-clear-text --name github ${{ vars.NUGET_URL }}
+
+    # A restore has to use the configuration that is built: the configuration chooses the target framework and the GameshowPro.Common flavor.
+    - name: Restore NuGet dependencies
+      shell: pwsh
+      run: dotnet restore $env:SLN_PATH -p:Configuration=${{ matrix.package.configuration }}
+
+    # The hardware tests need a P.I. Engineering device and report themselves inconclusive (skipped) on a runner that has none.
+    - name: Run tests
+      shell: pwsh
+      run: dotnet test $env:SLN_PATH -c ${{ matrix.package.configuration }}
+
+    - name: Build package
+      shell: pwsh
+      run: dotnet pack $env:PROJECT_PATH --output $env:PUBLISH_PATH -c ${{ matrix.package.configuration }}
+
+    - name: Upload
+      uses: actions/upload-artifact@v7
+      with:
+        name: package-${{ matrix.package.name }}
+        path: ${{ env.PUBLISH_PATH }}/*.nupkg
+        retention-days: 3
+
+  Release_And_Push:
+    name: Release and push packages
+    needs: Build_And_Package
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      id-token: write # For nuget.org trusted publishing (OIDC)
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0 # For tag creation
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v8
+      with:
+        path: ./all-packages
+
+    # nbgv and `dotnet nuget push` below run the dotnet CLI in the repository, where global.json pins an SDK the runner image may not ship.
+    - name: Use .NET SDK from global.json
+      uses: actions/setup-dotnet@v6
+      with:
+        global-json-file: global.json
+
+    - name: Nerdbank.GitVersioning
+      uses: dotnet/nbgv@v0.5.2
+      with:
+        setAllVars: true
+
+    # GitHub Packages first (both packages: GameshowPro.XKeys and GameshowPro.XKeys.Windows).
+    - name: Publish NuGet packages to GitHub Packages
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem -Path "./all-packages" -Recurse -Filter "*.nupkg"
+        if ($packages.Count -ne 2) { throw "Expected 2 packages, found $($packages.Count)" }
+        foreach ($package in $packages) {
+          Write-Host "Pushing package: $($package.FullName)"
+          dotnet nuget push $package.FullName --api-key "${{ secrets.GSP_PACKAGE_PAT }}" --source ${{ vars.NUGET_URL }} --skip-duplicate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to push package: $($package.Name)"
+            exit 1
+          }
+        }
+
+    # nuget.org (trusted publishing). Off until the repository variable NUGET_ORG_USER is set, which happens after the trusted publishing
+    # policy exists for this repository.
+    - name: Log in to nuget.org (trusted publishing)
+      id: nuget_login
+      if: vars.NUGET_ORG_USER != ''
+      uses: NuGet/login@v1
+      with:
+        user: ${{ vars.NUGET_ORG_USER }}
+
+    - name: Publish NuGet packages to nuget.org
+      if: vars.NUGET_ORG_USER != ''
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem -Path "./all-packages" -Recurse -Filter "*.nupkg"
+        foreach ($package in $packages) {
+          Write-Host "Pushing package to nuget.org: $($package.FullName)"
+          dotnet nuget push $package.FullName --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to push package to nuget.org: $($package.Name)"
+            exit 1
+          }
+        }
+
+    # Tags and the release only after every enabled feed has the packages.
+    - name: Add tags
+      shell: pwsh
+      run: |
+        nbgv tag ${{ needs.Build_And_Package.outputs.semver2_version }}
+        git push origin "v${{ needs.Build_And_Package.outputs.semver2_version }}"
+
+    - name: Create GitHub release
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: v${{ needs.Build_And_Package.outputs.semver2_version }}
+        files: ./all-packages/**/*.nupkg

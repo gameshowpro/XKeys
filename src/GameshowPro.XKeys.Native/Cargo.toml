@@ -1,0 +1,33 @@
+[package]
+name = "xkhid"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+description = "Reads X-keys HID reports in native code and stamps each with QueryPerformanceCounter the moment its read completes, so a .NET garbage collection cannot delay the timestamp; replaces PIEHidNetCore.dll."
+
+[lib]
+# xkhid.dll, loaded by GameshowPro.XKeys. "rlib" lets the diagnostic example
+# (examples/xkprobe.rs) and the unit tests call the same exports from Rust.
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+# rustdoc does not get .cargo/config.toml's rustflags, so it would trip the static-CRT check in src/lib.rs; there are no doctests.
+doctest = false
+
+# No dependencies: the Win32 functions used are declared by hand in src/win32.rs.
+[dependencies]
+
+[[example]]
+# Diagnostic tool: lists P.I. Engineering interfaces, asks them for a report (Generate Data), prints stamped reports, and runs the
+# enumeration leak test. `cargo run --release --example xkprobe -- help`.
+name = "xkprobe"
+
+[profile.release]
+# A panic must never unwind across the C ABI into the managed caller; any panic ends the process.
+panic = "abort"
+lto = true
+codegen-units = 1
+opt-level = 3
+
+[profile.dev]
+panic = "abort"

@@ -1,0 +1,44 @@
+﻿<ResourceDictionary x:Class="GameshowPro.XKeys.View.Template"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:xkeys="clr-namespace:GameshowPro.XKeys"   
+             xmlns:conv="clr-namespace:GameshowPro.Common.Converters;assembly=GameshowPro.Common"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d">
+    <DataTemplate x:Key="XKeysDevice.Header">
+        <!--This is how an XKeys device's header is represented on the UI-->
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Margin="{StaticResource ControlSmallMargin}" Style="{StaticResource SmallPrint}" VerticalAlignment="Center">                                        
+                                                        <Run>Firmware v</Run><Run Text="{Binding FirmwareVersion, Mode=OneWay}"/><Run>, PID </Run> <Run Text="{Binding BaseSettings.Pid, Mode=OneWay, StringFormat=x2}"/>
+            </TextBlock>
+            <UniformGrid Columns="1">
+                <Ellipse Width="10" Height="10">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="#002200"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding GreenLedIsOn}" Value="{conv:Bool true}">
+                                    <Setter Property="Fill" Value="#22ff22"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <Ellipse Width="10" Height="10">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="#220000"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RedLedIsOn}" Value="{conv:Bool true}">
+                                    <Setter Property="Fill" Value="#ff2222"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+            </UniformGrid>
+        </StackPanel>
+    </DataTemplate>
+</ResourceDictionary>

@@ -1,0 +1,110 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    One library, two builds (the GameshowPro.Common convention), chosen by the configuration:
+      Debug, Release                 package GameshowPro.XKeys          net11.0, depends on GameshowPro.Common.JsonNet
+      DebugWindows, ReleaseWindows   package GameshowPro.XKeys.Windows  net11.0-windows with WPF, depends on GameshowPro.Common.JsonNet.Windows,
+                                                                        and adds the WPF resource dictionary View/Template.xaml
+    Everything else (the device and trigger classes, the HID layer in Hid/ and xkhid.dll) is the same in both. Both builds run on Windows
+    x64 only, because xkhid.dll does. The two builds share obj/project.assets.json, so build them one after the other, not at once.
+  -->
+  <PropertyGroup>
+    <Configurations>Debug;Release;DebugWindows;ReleaseWindows</Configurations>
+    <XKeysWindowsBuild>false</XKeysWindowsBuild>
+    <XKeysWindowsBuild Condition="'$(Configuration)' == 'DebugWindows' OR '$(Configuration)' == 'ReleaseWindows'">true</XKeysWindowsBuild>
+    <RepositoryUrl>https://github.com/gameshowpro/XKeys</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/gameshowpro/XKeys</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!--
+      GameshowPro.Common (JsonNet, and through it GameshowPro.Common itself) comes from its published package. To develop against a local
+      checkout of the Common repository instead, set GameshowProCommonProject (an MSBuild property or an environment variable of the same
+      name) to the path of its GameshowPro.Common.JsonNet.csproj. The project is then referenced and built in the configuration of this one
+      (DebugWindows and ReleaseWindows give Common's Windows flavor, the others its cross-platform flavor, as the packages do). This is
+      temporary: unset it once CI has published the package.
+    -->
+    <GameshowProCommonUseProject Condition="'$(GameshowProCommonProject)' != ''">true</GameshowProCommonUseProject>
+    <GameshowProCommonUseProject Condition="'$(GameshowProCommonUseProject)' == ''">false</GameshowProCommonUseProject>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="$(XKeysWindowsBuild)">
+      <PropertyGroup>
+        <TargetFramework>net11.0-windows</TargetFramework>
+        <PackageId>GameshowPro.XKeys.Windows</PackageId>
+        <Product>GameshowPro XKeys - Windows (WPF) version</Product>
+        <Description>P.I. Engineering X-keys devices as GameshowPro incoming trigger devices, with the native HID layer (xkhid.dll, Windows x64) and the WPF resource dictionary GameshowPro.XKeys;component/View/Template.xaml. For WPF applications; others use GameshowPro.XKeys.</Description>
+        <UseWPF>true</UseWPF>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+        <DefineConstants>$(DefineConstants);WPF</DefineConstants>
+      </PropertyGroup>
+      <ItemGroup Condition="!$(GameshowProCommonUseProject)">
+        <PackageReference Include="GameshowPro.Common.JsonNet.Windows" Version="1.4.18" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <TargetFramework>net11.0</TargetFramework>
+        <PackageId>GameshowPro.XKeys</PackageId>
+        <Product>GameshowPro XKeys</Product>
+        <Description>P.I. Engineering X-keys devices as GameshowPro incoming trigger devices, with the native HID layer (xkhid.dll, Windows x64). No UI; WPF applications use GameshowPro.XKeys.Windows, which adds a WPF resource dictionary.</Description>
+      </PropertyGroup>
+      <ItemGroup>
+        <!-- The WPF resource dictionary is in the Windows build only. -->
+        <None Remove="View/**" />
+        <Compile Remove="View/**" />
+      </ItemGroup>
+      <ItemGroup Condition="!$(GameshowProCommonUseProject)">
+        <PackageReference Include="GameshowPro.Common.JsonNet" Version="1.4.18" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GameshowPro.XKeys</RootNamespace>
+    <Company>Barjonas LLC</Company>
+    <Authors>Hamish Barjonas</Authors>
+    <Copyright>Barjonas LLC 2026</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <Platforms>AnyCpu</Platforms>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Source-generated P/Invoke (LibraryImport) in Hid/ generates pointers to pinned data. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'DebugWindows'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseWindows'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup Condition="$(GameshowProCommonUseProject)">
+    <ProjectReference Include="$(GameshowProCommonProject)" />
+  </ItemGroup>
+  <Target Name="ReportGameshowProCommonSource" BeforeTargets="CoreCompile">
+    <Error Condition="$(GameshowProCommonUseProject) AND !Exists('$(GameshowProCommonProject)')" Text="GameshowProCommonProject is set to '$(GameshowProCommonProject)', which is not a file. Unset it to use the GameshowPro.Common package." />
+    <Message Importance="high" Condition="$(GameshowProCommonUseProject)" Text="LOCAL PROJECT REFERENCE: GameshowPro.Common is built from $(GameshowProCommonProject), not the published package. Unset GameshowProCommonProject once CI has published the package." />
+  </Target>
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.10.94">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <!-- xkhid.dll, built from the Rust crate in ..\GameshowPro.XKeys.Native, is a native asset of this project and of both its packages
+       (runtimes/win-x64/native); it flows to the output and publish folders of every project that references this one. -->
+  <Import Project="Xkhid.targets" />
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GameshowPro.XKeys.Tests" />
+  </ItemGroup>
+</Project>

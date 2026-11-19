@@ -1,0 +1,81 @@
+﻿<Project>
+  <!--
+    Builds xkhid.dll, the native X-keys HID access library (the Rust crate in ..\GameshowPro.XKeys.Native), with cargo, and makes it
+    part of this project: copied to the output folder under runtimes\win-x64\native (where the binding looks for it, and where
+    NuGet puts a package's native assets in a consumer's output) and packed at runtimes/win-x64/native in the NuGet package.
+
+    It is built on a Windows machine only (the Rust target is x86_64-pc-windows-msvc), whatever the managed platform of this project.
+    The DLL is required: without it GameshowPro.XKeys finds no devices. When cargo cannot be found the build FAILS with an error,
+    unless XkHidSkip=true (the explicit opt-out: the DLL is left out, the binding reports it as unavailable at run time, and
+    `dotnet pack` refuses to make a package without it unless the opt-out is also given). A project that only tests the binding may
+    set XkHidRequired=false before importing this file, which turns the missing-cargo error back into a message.
+    cargo is looked for at XkHidCargo (a full path to cargo.exe, if set), %CARGO_HOME%\bin, %USERPROFILE%\.cargo\bin, then the PATH.
+    cargo runs only when a crate source is newer than the DLL; cargo errors fail the build.
+  -->
+  <PropertyGroup>
+    <XkHidCrateDir>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'GameshowPro.XKeys.Native'))</XkHidCrateDir>
+    <XkHidRustTarget>x86_64-pc-windows-msvc</XkHidRustTarget>
+    <XkHidDll>$(XkHidCrateDir)target\$(XkHidRustTarget)\release\xkhid.dll</XkHidDll>
+    <XkHidRequired Condition="'$(XkHidRequired)' == ''">true</XkHidRequired>
+  </PropertyGroup>
+
+  <Target Name="XkHidBuild" BeforeTargets="AssignTargetPaths;_GetPackageFiles" Condition="'$(DesignTimeBuild)' != 'true'"
+          DependsOnTargets="_XkHidProbe;_XkHidCargoBuild;_XkHidAddToOutput" />
+
+  <Target Name="_XkHidProbe">
+    <PropertyGroup>
+      <_XkHidWanted>false</_XkHidWanted>
+      <_XkHidWanted Condition="$([MSBuild]::IsOSPlatform('Windows'))">true</_XkHidWanted>
+      <_XkHidWanted Condition="'$(XkHidSkip)' == 'true'">false</_XkHidWanted>
+      <_XkHidCargo>$(XkHidCargo)</_XkHidCargo>
+      <_XkHidCargo Condition="'$(_XkHidCargo)' == '' and '$(CARGO_HOME)' != '' and Exists('$(CARGO_HOME)\bin\cargo.exe')">$(CARGO_HOME)\bin\cargo.exe</_XkHidCargo>
+      <_XkHidCargo Condition="'$(_XkHidCargo)' == '' and '$(USERPROFILE)' != '' and Exists('$(USERPROFILE)\.cargo\bin\cargo.exe')">$(USERPROFILE)\.cargo\bin\cargo.exe</_XkHidCargo>
+    </PropertyGroup>
+
+    <!-- Not in a default location: try the PATH. A missing command only sets a non-zero exit code. -->
+    <Exec Condition="'$(_XkHidWanted)' == 'true' and '$(_XkHidCargo)' == ''" Command="cargo --version" EchoOff="true"
+          IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="_XkHidPathCargoExitCode" />
+    </Exec>
+
+    <PropertyGroup>
+      <_XkHidCargo Condition="'$(_XkHidCargo)' == '' and '$(_XkHidPathCargoExitCode)' == '0'">cargo</_XkHidCargo>
+      <_XkHidBuild>false</_XkHidBuild>
+      <_XkHidBuild Condition="'$(_XkHidWanted)' == 'true' and '$(_XkHidCargo)' != ''">true</_XkHidBuild>
+    </PropertyGroup>
+
+    <Message Importance="high" Condition="'$(XkHidSkip)' == 'true'"
+             Text="xkhid.dll left out (XkHidSkip=true): $(MSBuildProjectName) will report the native library as unavailable at run time." />
+    <Message Importance="high" Condition="'$(XkHidSkip)' != 'true' and '$(_XkHidWanted)' != 'true'"
+             Text="xkhid.dll is not built on this operating system: it is for Windows x64 only." />
+    <Error Condition="'$(_XkHidWanted)' == 'true' and '$(_XkHidBuild)' != 'true' and '$(XkHidRequired)' == 'true'"
+           Text="xkhid.dll cannot be built because cargo was not found, and $(MSBuildProjectName) needs it: without it no X-keys device is found. Install Rust (https://rustup.rs, stable x86_64-pc-windows-msvc), or set XkHidCargo to the full path of cargo.exe, or pass -p:XkHidSkip=true to build without the DLL on purpose (the binding will then report an error at run time)." />
+    <Message Importance="high" Condition="'$(_XkHidWanted)' == 'true' and '$(_XkHidBuild)' != 'true' and '$(XkHidRequired)' != 'true'"
+             Text="xkhid.dll skipped: cargo was not found. $(MSBuildProjectName) does not need the DLL, so the build goes on; tests that load it are inconclusive. Install Rust (https://rustup.rs, stable x86_64-pc-windows-msvc) or set XkHidCargo to cargo.exe to build it." />
+
+    <ItemGroup Condition="'$(_XkHidBuild)' == 'true'">
+      <_XkHidInput Include="$(XkHidCrateDir)Cargo.toml;$(XkHidCrateDir)Cargo.lock;$(XkHidCrateDir).cargo\config.toml;$(XkHidCrateDir)src\**\*.rs" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Runs cargo from the crate directory so its .cargo\config.toml (static C runtime) applies. The crate's examples are not built. -->
+  <Target Name="_XkHidCargoBuild" Condition="'$(_XkHidBuild)' == 'true'" Inputs="@(_XkHidInput)" Outputs="$(XkHidDll)">
+    <Exec Command="&quot;$(_XkHidCargo)&quot; build --release --lib --target $(XkHidRustTarget)" WorkingDirectory="$(XkHidCrateDir)"
+          IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="high" />
+    <!-- cargo leaves the DLL untouched when it has nothing to rebuild; touch it so the inputs are not newer next time. -->
+    <Touch Files="$(XkHidDll)" />
+  </Target>
+
+  <!-- Copied to the output (and publish) folder, and packed, as a native asset for win-x64. -->
+  <Target Name="_XkHidAddToOutput" Condition="'$(_XkHidBuild)' == 'true' and Exists('$(XkHidDll)')">
+    <ItemGroup>
+      <None Include="$(XkHidDll)" Link="runtimes\win-x64\native\xkhid.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
+            Pack="true" PackagePath="runtimes/win-x64/native/" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+  <!-- A package without the DLL would build and then find no devices in every consumer, so packing without it is refused. -->
+  <Target Name="_XkHidRequireForPack" BeforeTargets="GenerateNuspec" Condition="'$(XkHidSkip)' != 'true'">
+    <Error Condition="!Exists('$(XkHidDll)')" Text="The package would not contain xkhid.dll, because it has not been built (it needs Windows and cargo; see Xkhid.targets). Pass -p:XkHidSkip=true to pack without it on purpose." />
+  </Target>
+</Project>
