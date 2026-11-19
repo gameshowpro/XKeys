@@ -72,6 +72,10 @@ The hardware tests need an X-keys device and report themselves inconclusive with
 
 The project is written in en-US. `bash scripts/check-en-us.sh` (run on every push and pull request) fails on en-GB spelling; put `en-us-allow` on a line for a deliberate exception.
 
+## Unsigned native library
+
+`xkhid.dll` is not yet code-signed. Where Windows Smart App Control is enforcing, it can block the DLL from loading; the managed assemblies are not affected. On machines that run Smart App Control, turn it off or leave it in evaluation mode for now. Code signing through SignPath is planned.
+
 ## Why this library has its own native HID layer
 
 X-keys devices are standard USB HID devices. P.I. Engineering publishes a managed wrapper, `PIEHidNetCore.dll`, and this library used it up to version 1. From version 2 it uses our own native layer (a small Rust library, `xkhid`, in `src/GameshowPro.XKeys.Native`) for the reasons below.

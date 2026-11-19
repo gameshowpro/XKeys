@@ -10,7 +10,8 @@
     `dotnet pack` refuses to make a package without it unless the opt-out is also given). A project that only tests the binding may
     set XkHidRequired=false before importing this file, which turns the missing-cargo error back into a message.
     cargo is looked for at XkHidCargo (a full path to cargo.exe, if set), %CARGO_HOME%\bin, %USERPROFILE%\.cargo\bin, then the PATH.
-    cargo runs only when a crate source is newer than the DLL; cargo errors fail the build.
+    cargo runs only when a crate source is newer than the DLL, or the release version changed; cargo errors fail the build.
+    The release version (from Nerdbank.GitVersioning) is passed to the crate's build.rs, which embeds it in the DLL's version resource.
   -->
   <PropertyGroup>
     <XkHidCrateDir>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'GameshowPro.XKeys.Native'))</XkHidCrateDir>
@@ -20,7 +21,7 @@
   </PropertyGroup>
 
   <Target Name="XkHidBuild" BeforeTargets="AssignTargetPaths;_GetPackageFiles" Condition="'$(DesignTimeBuild)' != 'true'"
-          DependsOnTargets="_XkHidProbe;_XkHidCargoBuild;_XkHidAddToOutput" />
+          DependsOnTargets="_XkHidProbe;_XkHidVersion;_XkHidCargoBuild;_XkHidAddToOutput" />
 
   <Target Name="_XkHidProbe">
     <PropertyGroup>
@@ -58,9 +59,24 @@
     </ItemGroup>
   </Target>
 
+  <!-- The release version for the DLL's version resource. Its stamp file is an input of the cargo target, so a new version rebuilds the
+       DLL even when no source changed (the file is only rewritten when the values differ). -->
+  <Target Name="_XkHidVersion" DependsOnTargets="GetBuildVersion" Condition="'$(_XkHidBuild)' == 'true'">
+    <PropertyGroup>
+      <_XkHidFileVersion>$(BuildVersionSimple).0</_XkHidFileVersion>
+      <_XkHidProductVersion>$(NuGetPackageVersion)</_XkHidProductVersion>
+      <_XkHidVersionStamp>$(IntermediateOutputPath)xkhid.version.txt</_XkHidVersionStamp>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_XkHidVersionStamp)" Lines="$(_XkHidFileVersion);$(_XkHidProductVersion)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_XkHidInput Include="$(_XkHidVersionStamp)" />
+    </ItemGroup>
+  </Target>
+
   <!-- Runs cargo from the crate directory so its .cargo\config.toml (static C runtime) applies. The crate's examples are not built. -->
   <Target Name="_XkHidCargoBuild" Condition="'$(_XkHidBuild)' == 'true'" Inputs="@(_XkHidInput)" Outputs="$(XkHidDll)">
     <Exec Command="&quot;$(_XkHidCargo)&quot; build --release --lib --target $(XkHidRustTarget)" WorkingDirectory="$(XkHidCrateDir)"
+          EnvironmentVariables="GSP_FILE_VERSION=$(_XkHidFileVersion);GSP_PRODUCT_VERSION=$(_XkHidProductVersion)"
           IgnoreStandardErrorWarningFormat="true" StandardErrorImportance="high" />
     <!-- cargo leaves the DLL untouched when it has nothing to rebuild; touch it so the inputs are not newer next time. -->
     <Touch Files="$(XkHidDll)" />

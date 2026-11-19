@@ -17,6 +17,10 @@ doctest = false
 # No dependencies: the Win32 functions used are declared by hand in src/win32.rs.
 [dependencies]
 
+# Build-time only: embeds the Windows version resource (build.rs).
+[build-dependencies]
+embed-resource = "3"
+
 [[example]]
 # Diagnostic tool: lists P.I. Engineering interfaces, asks them for a report (Generate Data), prints stamped reports, and runs the
 # enumeration leak test. `cargo run --release --example xkprobe -- help`.
