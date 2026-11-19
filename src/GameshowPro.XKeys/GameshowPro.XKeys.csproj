@@ -16,6 +16,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/gameshowpro/XKeys</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>gameshowpro-icon.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup>
     <!--
@@ -103,6 +104,7 @@
   <Import Project="Xkhid.targets" />
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\..\resources\gameshowpro-icon.png" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="GameshowPro.XKeys.Tests" />
