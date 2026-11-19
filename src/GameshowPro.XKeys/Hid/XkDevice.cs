@@ -207,7 +207,7 @@ public sealed unsafe class XkDevice : IDisposable
     /// <summary>The enumeration result this session was opened from.</summary>
     public XkDeviceDescriptor Descriptor { get; }
 
-    /// <summary>The catalogue entry for <see cref="Pid"/> (a generic model if the PID is unknown); it decodes the events.</summary>
+    /// <summary>The catalog entry for <see cref="Pid"/> (a generic model if the PID is unknown); it decodes the events.</summary>
     public XkModel Model { get; }
 
     /// <summary>The typed lighting commands for this device (one instance per device); see <see cref="XkLights"/>. Raw reports remain available through <see cref="Write"/>.</summary>

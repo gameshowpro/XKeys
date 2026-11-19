@@ -77,7 +77,7 @@ public class XKeysDevice<TTriggerKey> : IncomingTriggerDevice<TTriggerKey, XKeys
     }
 
     /// <summary>
-    /// The catalogue entry of the connected device's model, or, while none is connected, of the product ID in <see cref="Settings"/> (a
+    /// The catalog entry of the connected device's model, or, while none is connected, of the product ID in <see cref="Settings"/> (a
     /// generic model while that is 0 or unknown). Names its inputs: see <see cref="XkModel.InputName"/> and <see cref="XKeysIncomingTrigger.InputName"/>.
     /// </summary>
     public XkModel Model => Session?.Model ?? XkModel.ForPid((ushort)Settings.Pid);

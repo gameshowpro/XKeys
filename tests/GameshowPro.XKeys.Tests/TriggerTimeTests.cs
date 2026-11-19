@@ -138,7 +138,7 @@ public sealed class TriggerTimeTests
     }
 
     [TestMethod]
-    public void InputNames_AndTheDeviceModel_ComeFromTheCatalogue()
+    public void InputNames_AndTheDeviceModel_ComeFromTheCatalog()
     {
         XKeysDevice<TestKey> device = NewDevice(out XKeysIncomingTrigger one, out XKeysIncomingTrigger two);
 

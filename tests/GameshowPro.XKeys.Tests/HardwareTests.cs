@@ -182,7 +182,7 @@ public sealed class HardwareTests
                     Assert.AreEqual(present[i].Path, device.CurrentPath, ignoreCase: true, $"entry {i} is the {i}th device in the library's order");
                     Assert.AreEqual(present[i], device.Descriptor);
                     Assert.AreEqual(XkModel.ForPid(present[i].Pid), device.Model);
-                    Assert.AreEqual(XkModel.ForPid(present[i].Pid).NameForPid(present[i].Pid), device.NamePrefix, "named from the catalogue");
+                    Assert.AreEqual(XkModel.ForPid(present[i].Pid).NameForPid(present[i].Pid), device.NamePrefix, "named from the catalog");
                     Assert.AreEqual(RemoteServiceStates.Connected, device.ServiceState.AggregateState);
                     Assert.AreEqual(XkDeliveryMode.Events, device.Session!.DeliveryMode, "pushed, not polled");
                     Assert.IsTrue(SpinWait.SpinUntil(() => device.Id != 0, 2000), $"device 0x{device.Settings.Pid:X4} delivered no report");

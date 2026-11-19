@@ -131,7 +131,7 @@ public static class XKeysDevices<TTriggerKey>
             int requiredForMin = minCount - devList.Count - settingsStack.Count;
             if (requiredForMin > 0)
             {
-                logger.LogTrace("{requiredForMin} new settings will be created to fulfil minimum requirement.", requiredForMin);
+                logger.LogTrace("{requiredForMin} new settings will be created to fulfill the minimum requirement.", requiredForMin);
                 for (int i = 0; i < requiredForMin; i++)
                 {
                     XKeysDeviceSettings deviceSettings = new();

@@ -1,0 +1,22 @@
+name: Checks
+
+# Fast checks that run on every push and pull request, including documentation-only changes, which build.yaml skips.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spelling:
+    name: Spelling (en-US)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Check for en-GB spelling
+      run: bash scripts/check-en-us.sh

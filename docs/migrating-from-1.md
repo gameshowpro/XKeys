@@ -68,7 +68,7 @@ Linux on ARM, for example) references the package only in its Windows build.
 | `XKeysDevice<T>.PidMode` | did not exist | `byte`: which of the model's product IDs the device is using | Use this if the old `Pid` value was what you wanted |
 | `XKeysDevice<T>.HandlePIEHidError(PIEDevice, int)` | public | removed | Nothing should have called it |
 | `XKeysDevice<T>.Lights` | did not exist | `XkLights?`: every indicator light and backlight; null while disconnected | Optional. `SetLeds` still works as before |
-| `XKeysDevice<T>.Model`, `.Descriptor` | did not exist | the catalogue entry of the device's model (`XkModel`: name, inputs and their names, measured timing) and the interface it is attached to | Optional |
+| `XKeysDevice<T>.Model`, `.Descriptor` | did not exist | the catalog entry of the device's model (`XkModel`: name, inputs and their names, measured timing) and the interface it is attached to | Optional |
 | `XKeysIncomingTrigger.Time` (from `IncomingTrigger`) | never set | the time of the report that fired the trigger; see "Times on triggers" below | Optional |
 | `XKeysIncomingTrigger.DeviceMilliseconds`, `.InputName` | did not exist | the device's own millisecond timestamp of the input's last change (nullable), and the model's name for the input | Optional |
 | Types from `PIEHidNetCore` (`PIEDevice`, `PIEDataHandler`, ...) | reachable | gone | For raw device access use the namespace `GameshowPro.XKeys.Hid`, in the same package (`XkDeviceMonitor`, `XkDevice`, `XkEnumerator`, `XkModel`, `XkLights`) |
@@ -114,7 +114,7 @@ reports it; see the device facts below.
 ## Things worth knowing about specific devices
 
 Measured on real devices in November 2026 (details in the TriggerGate repository's `docs/accuracy-expectations.md`; the library's
-catalogue, `XkModel`, carries the same facts with their sources):
+catalog, `XkModel`, carries the same facts with their sources):
 
 - **XK-12 Jog & Shuttle**: the twelve keys are trigger IDs 0, 8, 16, 24 (top row), 1, 9, 17, 25 and 2, 10, 18, 26. Turning the jog
   dial pulses IDs 7 and 15, and the shuttle ring uses other bits of the same bytes; the library does not treat those as keys. Windows

@@ -102,7 +102,7 @@ public sealed class XkDeviceEventArgs : EventArgs
     /// <summary>The interface was already there when the monitor started (an arrival from the initial set, not a plug-in).</summary>
     public bool WasPresentAtStart { get; }
 
-    /// <summary>The catalogue entry for the interface's product ID.</summary>
+    /// <summary>The catalog entry for the interface's product ID.</summary>
     public XkModel Model => XkModel.ForPid(Descriptor.Pid);
 }
 

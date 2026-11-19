@@ -65,11 +65,11 @@ public sealed record XkObservedSpacing(TimeSpan DeviceClock, TimeSpan HostMinimu
 /// <summary>
 /// Everything this library knows about one X-keys model, in one immutable place: name, product IDs, which input bits are real inputs and
 /// what to call them, which bits must never be treated as inputs, report length, timing, device timestamp and lights. Each fact that
-/// varies in certainty carries its <see cref="XkFactSource"/>. Get one with <see cref="ForPid"/>; <see cref="All"/> lists the catalogue.
+/// varies in certainty carries its <see cref="XkFactSource"/>. Get one with <see cref="ForPid"/>; <see cref="All"/> lists the catalog.
 /// </summary>
 /// <remarks>
 /// Input numbers follow the report: input n is bit (n % 8) of report index 3 + n / 8, so the four bytes at indexes 3 to 6 form a 32-bit
-/// input word (<see cref="InputMask"/>). Sources: this repository's <c>docs/device-measurements.md</c>, TriggerGate's 2.0 model table, this library's 2.0 device name table (which this catalogue replaces), and the vendor's SDK pages.
+/// input word (<see cref="InputMask"/>). Sources: this repository's <c>docs/device-measurements.md</c>, TriggerGate's 2.0 model table, this library's 2.0 device name table (which this catalog replaces), and the vendor's SDK pages.
 /// </remarks>
 public sealed class XkModel
 {
@@ -134,7 +134,7 @@ public sealed class XkModel
     /// <summary>The last product ID of the model. The model's PIDs are <see cref="FirstPid"/> to this, inclusive; which one a device uses is its PID mode.</summary>
     public ushort LastPid { get; }
 
-    /// <summary>False for the generic model <see cref="ForPid"/> returns for a PID that is not in the catalogue.</summary>
+    /// <summary>False for the generic model <see cref="ForPid"/> returns for a PID that is not in the catalog.</summary>
     public bool IsKnown { get; }
 
     /// <summary>The real inputs, ascending by <see cref="XkInput.Number"/>. For an unknown model, every bit of the input word.</summary>
@@ -225,10 +225,10 @@ public sealed class XkModel
 
     public override string ToString() => IsKnown ? $"{Name} (0x{FirstPid:X4}-0x{LastPid:X4})" : Name;
 
-    /// <summary>The catalogue: every model this library knows, in no particular order.</summary>
-    public static IReadOnlyList<XkModel> All { get; } = BuildCatalogue();
+    /// <summary>The catalog: every model this library knows, in no particular order.</summary>
+    public static IReadOnlyList<XkModel> All { get; } = BuildCatalog();
 
-    /// <summary>The model with product ID <paramref name="pid"/>, or, for a PID not in the catalogue, a generic model (<see cref="IsKnown"/> false) named "Unknown Device (0x1234)" whose inputs are every bit of the input word.</summary>
+    /// <summary>The model with product ID <paramref name="pid"/>, or, for a PID not in the catalog, a generic model (<see cref="IsKnown"/> false) named "Unknown Device (0x1234)" whose inputs are every bit of the input word.</summary>
     public static XkModel ForPid(ushort pid)
     {
         foreach (XkModel model in All)
@@ -241,7 +241,7 @@ public sealed class XkModel
         return Generic(pid);
     }
 
-    private static XkModel[] BuildCatalogue()
+    private static XkModel[] BuildCatalog()
     {
         // Answers to Generate Data come at most once per 29 ms of the device's clock on both units (measured); a firmware limit.
         TimeSpan generatedInterval = TimeSpan.FromMilliseconds(29);

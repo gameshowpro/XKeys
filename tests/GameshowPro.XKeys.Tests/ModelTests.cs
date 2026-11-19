@@ -3,7 +3,7 @@ using GameshowPro.XKeys.Hid;
 
 namespace GameshowPro.XKeys.Tests;
 
-/// <summary>The model catalogue: the measured facts of the two test devices (docs/device-measurements.md), the documented ones, and the generic model. No device needed.</summary>
+/// <summary>The model catalog: the measured facts of the two test devices (docs/device-measurements.md), the documented ones, and the generic model. No device needed.</summary>
 [TestClass]
 public sealed class ModelTests
 {
@@ -114,7 +114,7 @@ public sealed class ModelTests
         Assert.AreEqual("XK-12 Jog & Shuttle", XkModel.ForPid(0x0426).NameForPid(0x0426));
         Assert.AreEqual("XK-12 Jog & Shuttle #3", XkModel.ForPid(0x0428).NameForPid(0x0428));
         Assert.AreEqual("XK-12 Switch Interface #4", XkModel.ForPid(SwitchInterfacePid).NameForPid(SwitchInterfacePid));
-        Assert.AreSame(XkModel.ForPid(0x0426), XkModel.ForPid(0x0428), "one catalogue entry per model");
+        Assert.AreSame(XkModel.ForPid(0x0426), XkModel.ForPid(0x0428), "one catalog entry per model");
     }
 
     [TestMethod]
@@ -136,7 +136,7 @@ public sealed class ModelTests
     [TestMethod]
     public void TheNamesAreThoseOfThe20Tables()
     {
-        // The WPF library's and TriggerGate's name tables, which the catalogue replaces.
+        // The WPF library's and TriggerGate's name tables, which the catalog replaces.
         (ushort Pid, string Name)[] expected =
         [
             (0x04A8, "XK-12 Switch Interface"), (0x0403, "XK-24"), (0x04D3, "XK-24 (KVM)"), (0x0426, "XK-12 Jog & Shuttle"),
@@ -178,7 +178,7 @@ public sealed class ModelTests
         }
     }
 
-    /// <summary>The catalogue's timestamp offsets and the native library's table (which XkDevice.Open uses by default) must agree for every PID.</summary>
+    /// <summary>The catalog's timestamp offsets and the native library's table (which XkDevice.Open uses by default) must agree for every PID.</summary>
     [TestMethod]
     public void TimestampOffsets_AgreeWithTheNativeTable()
     {

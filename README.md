@@ -70,6 +70,8 @@ dotnet pack src/GameshowPro.XKeys -c ReleaseWindows -o publish
 
 The hardware tests need an X-keys device and report themselves inconclusive without one. They send only Generate Data and volatile light commands, and leave the lights off.
 
+The project is written in en-US. `bash scripts/check-en-us.sh` (run on every push and pull request) fails on en-GB spelling; put `en-us-allow` on a line for a deliberate exception.
+
 ## Why this library has its own native HID layer
 
 X-keys devices are standard USB HID devices. P.I. Engineering publishes a managed wrapper, `PIEHidNetCore.dll`, and this library used it up to version 1. From version 2 it uses our own native layer (a small Rust library, `xkhid`, in `src/GameshowPro.XKeys.Native`) for the reasons below.
