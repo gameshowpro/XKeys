@@ -29,9 +29,10 @@ vendor library's memory leak.
 
 ## Steps
 
-1. Change the package reference to `<PackageReference Include="GameshowPro.XKeys.Windows" Version="2.1.*" />` (a WPF
-   application), or keep the ID `GameshowPro.XKeys` and raise it to 2.1 for an application without WPF (see "Without WPF" below).
-2. If the application references `GameshowPro.Common` packages directly, raise them to at least 1.4.14, in the same flavor (the
+1. Change the package reference to `<PackageReference Include="GameshowPro.XKeys.Windows" Version="2.2.*" />` (a WPF
+   application), or keep the ID `GameshowPro.XKeys` and raise it to 2.2 for an application without WPF (see "Without WPF" below).
+   2.2 is the first version on nuget.org.
+2. If the application references `GameshowPro.Common` packages directly, raise them to at least 1.4.18, in the same flavor (the
    `.Windows` packages with `GameshowPro.XKeys.Windows`), or NuGet reports a downgrade or a conflict.
 3. Remove anything that mentions `PIEHidNetCore`: `using PIEHidNetCore;`, a `<Reference>` to the DLL, copy steps, installer or
    packaging entries for `PIEHidNetCore.dll`.

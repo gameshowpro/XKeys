@@ -9,7 +9,14 @@ One library, built two ways from the same code (the convention of GameshowPro.Co
 - **GameshowPro.XKeys** (`net11.0`): the library with no UI, for services, console programs, ASP.NET apps and any other application without WPF. Depends on `GameshowPro.Common.JsonNet`.
 - **GameshowPro.XKeys.Windows** (`net11.0-windows`): the same library plus the WPF resource dictionary `GameshowPro.XKeys;component/View/Template.xaml`, for WPF applications. Depends on `GameshowPro.Common.JsonNet.Windows`.
 
-Nothing else differs between them. Each contains the device and trigger classes (`XKeysDevices<T>`, `XKeysDevice<T>`, `XKeysIncomingTrigger`, `XKeysDeviceSettings`) and, in the namespace `GameshowPro.XKeys.Hid`, raw device access: the device monitor, open devices with decoded and stamped reports, the model catalogue `XkModel`, and the lights.
+Nothing else differs between them. Each contains the device and trigger classes (`XKeysDevices<T>`, `XKeysDevice<T>`, `XKeysIncomingTrigger`, `XKeysDeviceSettings`) and, in the namespace `GameshowPro.XKeys.Hid`, raw device access: the device monitor, open devices with decoded and stamped reports, the model catalog `XkModel`, and the lights.
+
+Both are on nuget.org ([GameshowPro.XKeys](https://www.nuget.org/packages/GameshowPro.XKeys), [GameshowPro.XKeys.Windows](https://www.nuget.org/packages/GameshowPro.XKeys.Windows)) from version 2.2, along with the GameshowPro.Common packages they depend on, so no other package source is needed:
+
+```
+dotnet add package GameshowPro.XKeys           # no WPF
+dotnet add package GameshowPro.XKeys.Windows   # WPF applications
+```
 
 `GameshowPro.XKeys` is still Windows-only at run time, and its assembly is marked `[SupportedOSPlatform("windows")]`. A project that targets plain `net11.0` either targets `net11.0-windows` instead or declares that it runs on Windows (`[assembly: SupportedOSPlatform("windows")]`, or the equivalent `AssemblyAttribute` item in the project file); otherwise it gets platform warnings (CA1416) wherever it uses the library. See [docs/migrating-from-1.md](docs/migrating-from-1.md#without-wpf).
 
